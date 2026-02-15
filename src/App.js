@@ -736,7 +736,7 @@ const handleDeleteCandidate = async (realIndex) => {
 
 
   useEffect(() => {
-  fetch('https://mcii-voting-system.onrender.com//candidates')
+    fetch('https://mcii-backend.onrender.com/candidates')
     .then(res => res.json())
     .then(data => setCandidates(data))
     .catch(err => console.error(err));
