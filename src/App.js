@@ -2176,8 +2176,26 @@ const handleLogout = () => {
       alert("⚠️ Finish filling up your information first.");
       return;
     }
-    setView('takeIdPictureView');
+  
+    const hasID = window.confirm("Do you have MCII School ID?\n\nPress OK if YES.\nPress Cancel if NO.");
+  
+    if (hasID) {
+      setView('takeIdPictureView');
+    } else {
+      const adminCode = prompt("Enter Admin Code:");
+  
+      if (adminCode === "qwert54321") {
+        alert("✅ Admin Code Accepted!");
+  
+        setIsIDConfirmed(true);
+        setIsFaceConfirmed(true);
+  
+      } else if (adminCode !== null) {
+        alert("❌ Invalid Admin Code!");
+      }
+    }
   }}
+  
   disabled={isIDConfirmed || isIDAlreadySignedIn} // disabled if ID confirmed or already signed in
   style={{
     backgroundColor: isIDConfirmed ? 'green' : '',
