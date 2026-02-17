@@ -793,7 +793,10 @@ const handleDeleteCandidate = async (realIndex) => {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true });
       videoRef.current.srcObject = stream;
   
-      await faceapi.nets.tinyFaceDetector.loadFromUri('/models');
+      const MODEL_URL = process.env.PUBLIC_URL + '/models';
+    await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+    await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+    await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
   
       faceDetectionInterval.current = setInterval(async () => {
         if (!videoRef.current) return;
