@@ -3166,7 +3166,7 @@ const handleLogout = () => {
             onClick={handleSubmitVotes}
             disabled={Object.keys(selectedVotes).length !== positions.length}
           >
-            Submit
+             Submit
           </button>
         </div>
       </>
