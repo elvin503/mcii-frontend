@@ -880,34 +880,37 @@ const handleDeleteCandidate = async (realIndex) => {
 
     const detect = async () => {
       if (!isRunning || !idFaceDescriptor) return;
-
+    
       const now = Date.now();
       if (now - lastDetection < 300) {
         animationId = requestAnimationFrame(detect);
         return;
       }
-
-      const result = await faceapi
-        .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 160 }))
-        .withFaceLandmarks()
-        .withFaceDescriptor();
-
-      if (result) {
-        const distance = faceapi.euclideanDistance(result.descriptor, idFaceDescriptor);
-        console.log("Distance:", distance);
-
-        if (distance < 0.45) {
-          setIsFaceConfirmed(true);
-          isRunning = false;
-          video.srcObject.getTracks().forEach((t) => t.stop());
+    
+      try {
+        const result = await faceapi
+          .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 160 }))
+          .withFaceLandmarks()
+          .withFaceDescriptor();
+    
+        if (result) {
+          const distance = faceapi.euclideanDistance(result.descriptor, idFaceDescriptor);
+          console.log("Distance:", distance);
+    
+          if (distance < 0.45) {
+            setIsFaceConfirmed(true);
+            isRunning = false;
+            video.srcObject.getTracks().forEach((t) => t.stop());
+          }
         }
+      } catch (err) {
+        console.error("Face detection error:", err);
       }
-
+    
       lastDetection = now;
-      if (isRunning) {
-        animationId = requestAnimationFrame(detect);
-      }
+      if (isRunning) animationId = requestAnimationFrame(detect);
     };
+    
 
     detect();
   };
