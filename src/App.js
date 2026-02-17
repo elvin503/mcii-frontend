@@ -2912,20 +2912,8 @@ const handleLogout = () => {
   onClick={async () => {
     if (!codeEntered) return alert('❌ Please enter a code');
 
-    // 🔐 TEMP ADMIN BYPASS
-    if (codeEntered === 'admin321') {
-      setIsLoading(true);
-      setTimeout(() => {
-        setIsLoading(false);
-        setView('adminMenu');
-        setCodeEntered('');
-        setCodeUsed('');
-      }, 1000);
-      return;
-    }
-
     try {
-      const res = await fetch(`${API_BASE_URL}/check-code`, {
+      const res = await fetch(`${API_BASE_URL}/check-admin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code: codeEntered }),
@@ -2934,30 +2922,30 @@ const handleLogout = () => {
       const data = await res.json();
 
       if (!res.ok) {
-        alert(`❌ ${data.message}`);
+        alert(data.message); // ❌ Invalid code
         setCodeEntered('');
-        setCodeUsed('');
         return;
       }
 
+      // ✅ Admin verified
       setIsLoading(true);
-
       setTimeout(() => {
         setIsLoading(false);
-        setView('verificationStep');
-        setCodeUsed(codeEntered); // ✅ save the verified code
-        setCodeEntered('');       // clear input field
+        setView('adminMenu');
+        setCodeEntered('');
+        setCodeUsed('');
       }, 1000);
+
     } catch (err) {
       console.error(err);
       alert('❌ Server error. Please try again.');
       setCodeEntered('');
-      setCodeUsed('');
     }
   }}
 >
   Enter
 </button>
+
 
 
 
