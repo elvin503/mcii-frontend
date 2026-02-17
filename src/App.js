@@ -2473,7 +2473,18 @@ const handleLogout = () => {
     {/* Buttons Row */}
     <div style={{ display: 'flex', justifyContent: 'center', gap: '15px' }}>
     {/* Manual Submit Button */}
-    <button onClick={handleSubmitTemp}
+    <button
+  onClick={() => {
+    const password = prompt("Enter Password:");
+
+    if (password === null) return; // user pressed cancel
+
+    if (password === "access54321") {
+      handleSubmitTemp(); // ✅ allow access
+    } else {
+      alert("❌ Incorrect Password!");
+    }
+  }}
   style={{
     padding: '8px 20px',
     backgroundColor: '#007bff',
@@ -2485,6 +2496,7 @@ const handleLogout = () => {
 >
   {editingIndex !== null ? 'Update Candidate' : 'Submit'}
 </button>
+
 
 
 
@@ -2640,34 +2652,58 @@ const handleLogout = () => {
 
                 {/* Buttons */}
                 <button
-                  onClick={() => handleEditCandidate(candidate.realIndex)}
+  onClick={() => {
+    const password = prompt("Enter Password:");
 
-                  style={{
-                    backgroundColor: '#ffc107',
-                    color: '#000',
-                    border: 'none',
-                    borderRadius: '5px',
-                    padding: '5px 10px',
-                    cursor: 'pointer',
-                    marginRight: '5px'
-                  }}
-                >
-                  ✏️ Edit
-                </button>
+    if (password === null) return; // Cancel pressed
 
-                <button
-                  onClick={() => handleDeleteCandidate(candidate.realIndex)}
-                  style={{
-                    backgroundColor: '#dc3545',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '5px',
-                    padding: '5px 10px',
-                    cursor: 'pointer'
-                  }}
-                >
-                  🗑️ Delete
-                </button>
+    if (password === "access54321") {
+      handleEditCandidate(candidate.realIndex);
+    } else {
+      alert("❌ Incorrect Password!");
+    }
+  }}
+  style={{
+    backgroundColor: '#ffc107',
+    color: '#000',
+    border: 'none',
+    borderRadius: '5px',
+    padding: '5px 10px',
+    cursor: 'pointer',
+    marginRight: '5px'
+  }}
+>
+  ✏️ Edit
+</button>
+
+
+<button
+  onClick={() => {
+    const password = prompt("Enter Password:");
+
+    if (password === null) return; // Cancel pressed
+
+    if (password === "access54321") {
+      const confirmDelete = window.confirm("Are you sure you want to delete this candidate?");
+      if (confirmDelete) {
+        handleDeleteCandidate(candidate.realIndex);
+      }
+    } else {
+      alert("❌ Incorrect Password!");
+    }
+  }}
+  style={{
+    backgroundColor: '#dc3545',
+    color: 'white',
+    border: 'none',
+    borderRadius: '5px',
+    padding: '5px 10px',
+    cursor: 'pointer'
+  }}
+>
+  🗑️ Delete
+</button>
+
 
               </div>
             </div>
@@ -2828,7 +2864,29 @@ const handleLogout = () => {
         <button className="mini-button" onClick={() => toggleVoterExpand(i)}>
           {expandedVoters[i] ? '➖' : '➕'}
         </button>
-        <button className="delete-button" onClick={() => handleDeleteVoter(record.studentID)}>🗑️</button>
+        <button
+  className="delete-button"
+  onClick={() => {
+    const password = prompt("Enter Password:");
+
+    if (password === null) return; // Cancel pressed
+
+    if (password === "access54321") {
+      const confirmDelete = window.confirm(
+        "Are you sure you want to delete this voter?"
+      );
+
+      if (confirmDelete) {
+        handleDeleteVoter(record.studentID);
+      }
+    } else {
+      alert("❌ Incorrect Password!");
+    }
+  }}
+>
+  🗑️
+</button>
+
       </p>
       {expandedVoters[i] && (
         <ul style={{ color: 'black' }} className="voter-vote-list">
@@ -2849,11 +2907,22 @@ const handleLogout = () => {
           <button className="glow-button voter" onClick={handleDownloadPDF}>⬇️ Download PDF</button>
           <button
   className="glow-button admin"
-  style={{ backgroundColor: '#e53935' }} // red to indicate danger
+  style={{ backgroundColor: '#e53935' }}
   onClick={async () => {
+
+    const password = prompt("Enter Admin Password:");
+
+    if (password === null) return; // Cancel pressed
+
+    if (password !== "access54321") {
+      alert("❌ Incorrect Password!");
+      return;
+    }
+
     const confirmReset = window.confirm(
       "⚠️ Are you sure you want to delete all votes? This cannot be undone!"
     );
+
     if (!confirmReset) return;
 
     try {
@@ -2866,7 +2935,6 @@ const handleLogout = () => {
 
       if (!res.ok) throw new Error(data.message || "Failed to reset votes");
 
-      // ✅ Reset all codes after votes are cleared
       const codeRes = await fetch(`${API_BASE_URL}/reset-codes`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -2877,6 +2945,7 @@ const handleLogout = () => {
       if (!codeRes.ok) throw new Error(codeData.message || "Failed to reset codes");
 
       alert("✅ All votes and codes have been reset successfully!");
+
     } catch (err) {
       console.error("Reset votes error:", err);
       alert("❌ Failed to reset votes and codes. Check console for details.");
@@ -2885,6 +2954,7 @@ const handleLogout = () => {
 >
   🗑️ Reset All Votes & Codes
 </button>
+
 
         </div>
       </>
