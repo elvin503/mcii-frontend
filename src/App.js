@@ -50,6 +50,7 @@ function App() {
   const [lastStraightVote, setLastStraightVote] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [dots, setDots] = useState("");
+  const [checkingID, setCheckingID] = useState(false);
   
 
   const [stepsDone, setStepsDone] = useState({
@@ -139,7 +140,27 @@ const [loadingResults, setLoadingResults] = useState(true);
   
 
   
-  
+  const checkIDOnServer = async (id) => {
+    if (!id) return;
+
+    setCheckingID(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/check-id`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ studentID: id }),
+      });
+      const data = await res.json();
+
+      setIsIDAlreadySignedIn(data.alreadyVoted);
+    } catch (err) {
+      console.error("Error checking ID:", err);
+      setIsIDAlreadySignedIn(false);
+    } finally {
+      setCheckingID(false);
+    }
+  };
+
   
     // get unique partylist from existing candidates
   const availablePartylists = [...new Set(candidates.map(c => c.partylist))];
@@ -2054,36 +2075,43 @@ const handleLogout = () => {
   
   <div>
   <input
-    className="input-field"
-    placeholder="Student ID Number"
-    value={studentID}
-    onChange={(e) => {
-      const value = e.target.value;
+        className="input-field"
+        placeholder="Student ID Number"
+        value={studentID}
+        onChange={(e) => {
+          const value = e.target.value;
 
-      // Allow only up to 6 digits
-      if (/^\d{0,6}$/.test(value)) {
-        setStudentID(value);
-
-        // Check if ID is already signed in / already voted
-        if (hasVotedById[value]) {
-          setIsIDAlreadySignedIn(true);
-        } else {
-          setIsIDAlreadySignedIn(false);
-        }
-      }
-    }}
-    style={{
-      border: isIDAlreadySignedIn ? "2px solid red" : "2px solid #ccc",
-      outline: "none"
-    }}
-  />
+          // Allow only up to 6 digits
+          if (/^\d{0,6}$/.test(value)) {
+            setStudentID(value);
+            // Call server to check if this ID already voted
+            if (value.length === 6) checkIDOnServer(value);
+            else setIsIDAlreadySignedIn(false); // reset if incomplete
+          }
+        }}
+        style={{
+          border: isIDAlreadySignedIn ? "2px solid red" : "2px solid #ccc",
+          outline: "none",
+        }}
+        disabled={checkingID}
+      />
 
   {/* 🔴 Warning Text */}
   {isIDAlreadySignedIn && (
-    <p style={{ color: "red", marginTop: "5px", fontWeight: "bold" }}>
-      ⚠️ This ID number is already signed in.
-    </p>
-  )}
+        <p style={{ color: "red", marginTop: "5px", fontWeight: "bold" }}>
+          ⚠️ This ID number has already voted.
+        </p>
+      )}
+
+      {checkingID && (
+        <p style={{ color: "gray", marginTop: "5px", fontStyle: "italic" }}>
+          Checking ID...
+        </p>
+      )}
+
+      <small style={{ color: "darkgray", display: "block", marginTop: "4px" }}>
+        Note: Make sure your ID no. is correct
+      </small>
 </div>
 
 
