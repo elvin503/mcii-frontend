@@ -68,7 +68,7 @@ const [code, setCode] = useState('');
 const [codeEntered, setCodeEntered] = useState(""); // the input field
 const [codeUsed, setCodeUsed] = useState("");       // the code verified & ready to use
 
-const API_BASE_URL = "https://mcii-backend.onrender.com";
+const API_BASE_URL = 'https://mcii-backend.onrender.com/candidates';
 
 
 const [verifiedCode, setVerifiedCode] = useState(null);
@@ -794,6 +794,8 @@ const handleDeleteCandidate = async (realIndex) => {
       videoRef.current.srcObject = stream;
   
       await faceapi.nets.tinyFaceDetector.loadFromUri('/models');
+      await faceapi.nets.faceLandmark68Net.loadFromUri('/models')
+      await faceapi.nets.faceRecognitionNet.loadFromUri('/models')
   
       faceDetectionInterval.current = setInterval(async () => {
         if (!videoRef.current) return;
