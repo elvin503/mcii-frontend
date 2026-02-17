@@ -789,55 +789,40 @@ const handleDeleteCandidate = async (realIndex) => {
   
   
   const startFaceCamera = async () => {
+    if (!modelsLoaded) {
+      console.log("Models not loaded yet");
+      return;
+    }
+  
     try {
-      // Start camera
       const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      if (videoRef.current) videoRef.current.srcObject = stream;
   
-      // Load face-api.js models from CDN
-      await faceapi.nets.tinyFaceDetector.loadFromUri(
-        'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js/weights/tiny_face_detector_model'
-      );
-      await faceapi.nets.faceLandmark68Net.loadFromUri(
-        'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js/weights/face_landmark_68_model'
-      );
-      await faceapi.nets.faceRecognitionNet.loadFromUri(
-        'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js/weights/face_recognition_model'
-      );
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
   
-      // Start detection loop
+      // DO NOT LOAD MODELS HERE ANYMORE ❌
+  
       faceDetectionInterval.current = setInterval(async () => {
         if (!videoRef.current) return;
   
         try {
           const detection = await faceapi
-            .detectSingleFace(videoRef.current, new faceapi.TinyFaceDetectorOptions())
+            .detectSingleFace(
+              videoRef.current,
+              new faceapi.TinyFaceDetectorOptions({ inputSize: 160 })
+            )
             .withFaceLandmarks()
             .withFaceDescriptor();
   
           if (detection && detection.detection.score >= 0.95) {
             clearInterval(faceDetectionInterval.current);
   
-            // Stop camera
-            if (videoRef.current && videoRef.current.srcObject) {
-              const tracks = videoRef.current.srcObject.getTracks();
-              tracks.forEach(track => track.stop());
-              videoRef.current.srcObject = null;
-            }
+            const tracks = videoRef.current.srcObject.getTracks();
+            tracks.forEach(track => track.stop());
+            videoRef.current.srcObject = null;
   
-            // ✅ AUTO COMPLETE CURRENT STEP
-            setStepsDone(prev => ({
-              ...prev,
-              [`step${currentStep}`]: true
-            }));
-  
-            // ✅ MOVE TO NEXT STEP
-            if (currentStep < 3) {
-              setCurrentStep(prev => prev + 1);
-            } else {
-              setIsFaceConfirmed(true);
-              setShowFaceVerifiedPopup(true);
-            }
+            setIsFaceConfirmed(true);
           }
         } catch (err) {
           console.error("Face detection error:", err);
@@ -848,6 +833,7 @@ const handleDeleteCandidate = async (realIndex) => {
       console.error("Camera error:", err);
     }
   };
+  
   
   
   useEffect(() => {
@@ -941,14 +927,18 @@ const handleDeleteCandidate = async (realIndex) => {
 
 useEffect(() => {
   const loadModels = async () => {
-    const MODEL_URL = '/models'; // adjust path if needed
-    
-    await faceapi.loadTinyFaceDetectorModel(MODEL_URL);
-    await faceapi.loadFaceLandmarkTinyModel(MODEL_URL);
-    await faceapi.loadFaceRecognitionModel(MODEL_URL);
+    const MODEL_URL = '/models';
 
-    setModelsLoaded(true); // ✅ IMPORTANT
+    await Promise.all([
+      faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+      faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+      faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
+    ]);
+
+    console.log("✅ Models loaded properly");
+    setModelsLoaded(true);
   };
+
   loadModels();
 }, []);
 
