@@ -68,7 +68,7 @@ const [code, setCode] = useState('');
 const [codeEntered, setCodeEntered] = useState(""); // the input field
 const [codeUsed, setCodeUsed] = useState("");       // the code verified & ready to use
 
-const API_BASE_URL = 'https://mcii-backend.onrender.com/candidates';
+const API_BASE_URL = "https://mcii-backend.onrender.com";
 
 
 const [verifiedCode, setVerifiedCode] = useState(null);
