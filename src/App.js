@@ -2115,9 +2115,7 @@ const handleLogout = () => {
 </div>
 
 
-  <small style={{ color: 'darkgray', display: 'block', marginTop: '4px' }}>
-    NOte: Make sure your ID no. is correct
-  </small>
+
 
 
 
