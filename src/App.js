@@ -790,9 +790,11 @@ const handleDeleteCandidate = async (realIndex) => {
   
   const startFaceCamera = async () => {
     try {
+      // Start camera
       const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      videoRef.current.srcObject = stream;
+      if (videoRef.current) videoRef.current.srcObject = stream;
   
+      // Load face-api.js models from CDN
       await faceapi.nets.tinyFaceDetector.loadFromUri(
         'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js/weights/tiny_face_detector_model'
       );
@@ -802,39 +804,51 @@ const handleDeleteCandidate = async (realIndex) => {
       await faceapi.nets.faceRecognitionNet.loadFromUri(
         'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js/weights/face_recognition_model'
       );
-      
   
+      // Start detection loop
       faceDetectionInterval.current = setInterval(async () => {
         if (!videoRef.current) return;
   
-        const detection = await faceapi.detectSingleFace(
-          videoRef.current,
-          new faceapi.TinyFaceDetectorOptions()
-        );
+        try {
+          const detection = await faceapi
+            .detectSingleFace(videoRef.current, new faceapi.TinyFaceDetectorOptions())
+            .withFaceLandmarks()
+            .withFaceDescriptor();
   
-        if (detection && detection.score >= 0.95) {
-          clearInterval(faceDetectionInterval.current);
-          stopCamera();
+          if (detection && detection.detection.score >= 0.95) {
+            clearInterval(faceDetectionInterval.current);
   
-          // ✅ AUTO COMPLETE CURRENT STEP
-          setStepsDone(prev => ({
-            ...prev,
-            [`step${currentStep}`]: true
-          }));
+            // Stop camera
+            if (videoRef.current && videoRef.current.srcObject) {
+              const tracks = videoRef.current.srcObject.getTracks();
+              tracks.forEach(track => track.stop());
+              videoRef.current.srcObject = null;
+            }
   
-          // ✅ MOVE TO NEXT STEP
-          if (currentStep < 3) {
-            setCurrentStep(prev => prev + 1);
-          } else {
-            setIsFaceConfirmed(true);
-            setShowFaceVerifiedPopup(true);
+            // ✅ AUTO COMPLETE CURRENT STEP
+            setStepsDone(prev => ({
+              ...prev,
+              [`step${currentStep}`]: true
+            }));
+  
+            // ✅ MOVE TO NEXT STEP
+            if (currentStep < 3) {
+              setCurrentStep(prev => prev + 1);
+            } else {
+              setIsFaceConfirmed(true);
+              setShowFaceVerifiedPopup(true);
+            }
           }
+        } catch (err) {
+          console.error("Face detection error:", err);
         }
       }, 400);
+  
     } catch (err) {
       console.error("Camera error:", err);
     }
   };
+  
   
   useEffect(() => {
     fetchCandidates();
