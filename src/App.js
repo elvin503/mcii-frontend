@@ -2983,7 +2983,7 @@ const handleLogout = () => {
     if (!codeEntered) return alert('❌ Please enter a code');
 
     try {
-      const res = await fetch(`${API_BASE_URL}/check-admin`, {
+      const res = await fetch(`${API_BASE_URL}/check-access`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code: codeEntered }),
@@ -2992,18 +2992,23 @@ const handleLogout = () => {
       const data = await res.json();
 
       if (!res.ok) {
-        alert(data.message); // ❌ Invalid code
+        alert(`❌ ${data.message}`);
         setCodeEntered('');
         return;
       }
 
-      // ✅ Admin verified
       setIsLoading(true);
       setTimeout(() => {
         setIsLoading(false);
-        setView('adminMenu');
+
+        if (data.type === 'admin') {
+          setView('adminMenu');
+        } else if (data.type === 'voter') {
+          setView('verificationStep');
+          setCodeUsed(codeEntered);
+        }
+
         setCodeEntered('');
-        setCodeUsed('');
       }, 1000);
 
     } catch (err) {
@@ -3015,6 +3020,7 @@ const handleLogout = () => {
 >
   Enter
 </button>
+
 
 
 
