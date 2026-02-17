@@ -459,14 +459,13 @@ const handleDeleteCandidate = async (realIndex) => {
   
   const [expandedVoters, setExpandedVoters] = useState({});
   const handleDeleteVoter = async (studentID) => {
-
     const confirmDelete = window.confirm(
       "⚠️ Are you sure you want to delete this voter's record?"
     );
     if (!confirmDelete) return;
   
     try {
-  
+      // Send DELETE request to server
       const res = await fetch(`${API_BASE_URL}/vote-record/${studentID}`, {
         method: 'DELETE',
       });
@@ -474,28 +473,27 @@ const handleDeleteCandidate = async (realIndex) => {
       const data = await res.json();
       if (!res.ok) throw new Error(data.message);
   
-      // ✅ Remove from UI instantly (NO INDEX NEEDED)
+      // Remove deleted voter from UI
       const newVoteRecords = recordedVotes.voteRecords.filter(
         r => r.studentID !== studentID
       );
-  
-      // ✅ Reload results from server (MOST RELIABLE)
-      fetchResults();   // ⭐ VERY IMPORTANT
   
       setRecordedVotes(prev => ({
         ...prev,
         voteRecords: newVoteRecords
       }));
   
+      // Optional: reload results from server to be sure
+      fetchResults();
+  
       alert("✅ Voter deleted successfully!");
   
     } catch (err) {
-  
       console.error("Delete voter error:", err);
       alert("❌ Failed to delete voter.");
-  
     }
   };
+  
   
   
   
@@ -2910,17 +2908,10 @@ const handleLogout = () => {
   className="delete-button"
   onClick={() => {
     const password = prompt("Enter Password:");
-
-    if (password === null) return; // Cancel pressed
+    if (password === null) return;
 
     if (password === "access54321") {
-      const confirmDelete = window.confirm(
-        "Are you sure you want to delete this voter?"
-      );
-
-      if (confirmDelete) {
-        handleDeleteVoter(record.studentID);
-      }
+      handleDeleteVoter(record.studentID); // ✅ delete selected voter
     } else {
       alert("❌ Incorrect Password!");
     }
@@ -2928,6 +2919,7 @@ const handleLogout = () => {
 >
   🗑️
 </button>
+
 
       </p>
       {expandedVoters[i] && (
