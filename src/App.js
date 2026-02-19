@@ -310,7 +310,7 @@ const handleDeleteCandidate = async (realIndex) => {
   if (!window.confirm('Are you sure you want to delete this candidate?')) return;
 
   try {
-    const res = await fetch(`https://mcii-voting-system.onrender.com//candidates/${realIndex}`, {
+    const res = await fetch(`https://mcii-voting-system.onrender.com/candidates/${realIndex}`, {
       method: 'DELETE'
     });
 
@@ -389,7 +389,7 @@ const handleDeleteCandidate = async (realIndex) => {
     };
   
     try {
-      const res = await fetch('https://mcii-voting-system.onrender.com//add-candidate', {
+      const res = await fetch('https://mcii-voting-system.onrender.com/add-candidate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newCandidate)
@@ -583,7 +583,7 @@ const handleDeleteCandidate = async (realIndex) => {
     };
   
     try {
-      const res = await fetch('https://mcii-voting-system.onrender.com//candidates', {
+      const res = await fetch('https://mcii-voting-system.onrender.com/candidates', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newCandidate)
@@ -617,7 +617,7 @@ const handleDeleteCandidate = async (realIndex) => {
     const formData = new FormData();
     formData.append('photo', file);
   
-    const res = await fetch('https://mcii-voting-system.onrender.com//upload-photo', {
+    const res = await fetch('https://mcii-voting-system.onrender.com/upload-photo', {
       method: 'POST',
       body: formData,
     });
@@ -628,7 +628,7 @@ const handleDeleteCandidate = async (realIndex) => {
 
   const feetchCandidates = async () => {
     try {
-      const res = await fetch('https://mcii-voting-system.onrender.com//candidates');
+      const res = await fetch('https://mcii-voting-system.onrender.com/candidates');
       const data = await res.json();
       setCandidates(data); // updates the state with Redis data
     } catch (err) {
@@ -648,7 +648,7 @@ const handleDeleteCandidate = async (realIndex) => {
   
   const fetchCandidates = async () => {
     try {
-      const res = await fetch('https://mcii-voting-system.onrender.com//candidates');
+      const res = await fetch('https://mcii-voting-system.onrender.com/candidates');
       const data = await res.json();
       setCandidates(data); // from Redis only
     } catch (err) {
@@ -755,7 +755,7 @@ const handleDeleteCandidate = async (realIndex) => {
 
 
   useEffect(() => {
-    fetch('https://mcii-backend.onrender.com//candidates')
+    fetch('https://mcii-backend.onrender.com/candidates')
     .then(res => res.json())
     .then(data => setCandidates(data))
     .catch(err => console.error(err));
@@ -1181,7 +1181,7 @@ useEffect(() => {
   };
 
   try {
-    const res = await fetch('https://mcii-voting-system.onrender.com//candidates', {
+    const res = await fetch('https://mcii-voting-system.onrender.com/candidates', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -2124,7 +2124,7 @@ const handleLogout = () => {
       )}
 
       <small style={{ color: "darkgray", display: "block", marginTop: "4px" }}>
-        Note: Make sure your ID no. is correct
+        Note: Make sure your ID no.is correct
       </small>
 </div>
 
@@ -3126,7 +3126,7 @@ const handleLogout = () => {
                           )}
 
                           {/* Candidate Photo */}
-                          <img
+                          <img 
                             src={
                               c.photo
                                 ? c.photo // use Supabase public URL
