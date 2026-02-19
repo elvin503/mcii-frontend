@@ -928,7 +928,7 @@ const handleDeleteCandidate = async (realIndex) => {
 
 useEffect(() => {
   const loadModels = async () => {
-    const MODEL_URL = '/models';
+    const MODEL_URL = 'https://mcii-frontend.onrender.com/models';
 
     await Promise.all([  
       faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
@@ -936,12 +936,12 @@ useEffect(() => {
       faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
     ]);
 
-    console.log("✅ Models loaded properly");
-    setModelsLoaded(true);
+    console.log('Face-api models loaded');
   };
 
   loadModels();
 }, []);
+
 
 useEffect(() => {
   if (view === 'takeIdPictureView') {
