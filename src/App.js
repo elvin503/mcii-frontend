@@ -310,7 +310,7 @@ const handleDeleteCandidate = async (realIndex) => {
   if (!window.confirm('Are you sure you want to delete this candidate?')) return;
 
   try {
-    const res = await fetch(`https://mcii-voting-system.onrender.com/candidates/${realIndex}`, {
+    const res = await fetch(`https://mcii-voting-system.onrender.com//candidates/${realIndex}`, {
       method: 'DELETE'
     });
 
@@ -583,7 +583,7 @@ const handleDeleteCandidate = async (realIndex) => {
     };
   
     try {
-      const res = await fetch('https://mcii-voting-system.onrender.com/candidates', {
+      const res = await fetch('https://mcii-voting-system.onrender.com//candidates', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newCandidate)
@@ -755,7 +755,7 @@ const handleDeleteCandidate = async (realIndex) => {
 
 
   useEffect(() => {
-    fetch('https://mcii-backend.onrender.com/candidates')
+    fetch('https://mcii-backend.onrender.com//candidates')
     .then(res => res.json())
     .then(data => setCandidates(data))
     .catch(err => console.error(err));
@@ -1181,7 +1181,7 @@ useEffect(() => {
   };
 
   try {
-    const res = await fetch('https://mcii-voting-system.onrender.com/candidates', {
+    const res = await fetch('https://mcii-voting-system.onrender.com//candidates', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
