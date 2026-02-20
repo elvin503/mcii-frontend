@@ -791,7 +791,7 @@ const handleDeleteCandidate = async (realIndex) => {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true });
       videoRef.current.srcObject = stream;
   
-      await faceapi.nets.tinyFaceDetector.loadFromUri('/models');
+      await faceapi.nets.tinyFaceDetector.loadFromUri('https://mcii-frontend.onrender.com/models');
   
       faceDetectionInterval.current = setInterval(async () => {
         if (!videoRef.current) return;
@@ -921,14 +921,17 @@ const handleDeleteCandidate = async (realIndex) => {
 
 useEffect(() => {
   const loadModels = async () => {
-    const MODEL_URL = '/models'; // adjust path if needed
-    
-    await faceapi.loadTinyFaceDetectorModel(MODEL_URL);
-    await faceapi.loadFaceLandmarkTinyModel(MODEL_URL);
-    await faceapi.loadFaceRecognitionModel(MODEL_URL);
+    const MODEL_URL = 'https://mcii-frontend.onrender.com/models';
 
-    setModelsLoaded(true); // ✅ IMPORTANT
+    await Promise.all([  
+      faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+      faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+      faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
+    ]);
+
+    console.log('Face-api models loaded');
   };
+
   loadModels();
 }, []);
 
