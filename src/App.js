@@ -639,9 +639,8 @@ const handleDeleteCandidate = async (realIndex) => {
   
   
   const stopCamera = () => {
-    const stream = videoRef.current?.srcObject;
-    if (stream) {
-      stream.getTracks().forEach(track => track.stop());
+    if (videoRef.current && videoRef.current.srcObject) {
+      videoRef.current.srcObject.getTracks().forEach(track => track.stop());
       videoRef.current.srcObject = null;
     }
   };
@@ -788,10 +787,21 @@ const handleDeleteCandidate = async (realIndex) => {
   
   const startFaceCamera = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      videoRef.current.srcObject = stream;
+      if (!modelsLoaded) {
+        console.log("⏳ Models not loaded yet");
+        return;
+      }
   
-      await faceapi.nets.tinyFaceDetector.loadFromUri('/models');
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+  
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+  
+      // Clear existing interval if running
+      if (faceDetectionInterval.current) {
+        clearInterval(faceDetectionInterval.current);
+      }
   
       faceDetectionInterval.current = setInterval(async () => {
         if (!videoRef.current) return;
@@ -802,16 +812,18 @@ const handleDeleteCandidate = async (realIndex) => {
         );
   
         if (detection && detection.score >= 0.95) {
+          console.log("✅ Face detected");
+  
           clearInterval(faceDetectionInterval.current);
+          faceDetectionInterval.current = null;
+  
           stopCamera();
   
-          // ✅ AUTO COMPLETE CURRENT STEP
           setStepsDone(prev => ({
             ...prev,
             [`step${currentStep}`]: true
           }));
   
-          // ✅ MOVE TO NEXT STEP
           if (currentStep < 3) {
             setCurrentStep(prev => prev + 1);
           } else {
@@ -819,9 +831,11 @@ const handleDeleteCandidate = async (realIndex) => {
             setShowFaceVerifiedPopup(true);
           }
         }
+  
       }, 400);
+  
     } catch (err) {
-      console.error("Camera error:", err);
+      console.error("❌ Camera error:", err);
     }
   };
   
@@ -921,15 +935,20 @@ const handleDeleteCandidate = async (realIndex) => {
 
 useEffect(() => {
   const loadModels = async () => {
-    const MODEL_URL = '/models';
+    try {
+      const MODEL_URL = '/models';
 
-    await Promise.all([  
-      faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
-      faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
-      faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
-    ]);
+      await Promise.all([
+        faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+        faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+        faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
+      ]);
 
-    console.log('Face-api models loaded');
+      console.log("✅ Face-api models loaded");
+      setModelsLoaded(true);
+    } catch (error) {
+      console.error("❌ Model loading error:", error);
+    }
   };
 
   loadModels();
