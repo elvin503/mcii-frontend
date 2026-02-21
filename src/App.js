@@ -82,27 +82,6 @@ const [loadingResults, setLoadingResults] = useState(true);
   
 
   
-  
-
-
-
-  
-
-  
-  
-
-  
-  
-  
-
-  
-
-  
-
-  
-  
-  
-  
 
 
 
@@ -342,34 +321,7 @@ const handleDeleteCandidate = async (realIndex) => {
   };
   
 
-  const detectEyeBlink = async () => {
-    if (!modelsLoaded) return;
-    if (!videoRef.current) return;
-    if (eyeBlinkDetected) return;
   
-    const detection = await faceapi
-      .detectSingleFace(
-        videoRef.current,
-        new faceapi.TinyFaceDetectorOptions({ inputSize: 224 })
-      )
-      .withFaceLandmarks(true); // 👈 IMPORTANT
-  
-    if (!detection) return;
-  
-    const leftEye = detection.landmarks.getLeftEye();
-    const rightEye = detection.landmarks.getRightEye();
-  
-    // get eye height (top-bottom)
-    const leftEyeHeight = Math.abs(leftEye[1].y - leftEye[5].y);
-    const rightEyeHeight = Math.abs(rightEye[1].y - rightEye[5].y);
-  
-    const avgEyeHeight = (leftEyeHeight + rightEyeHeight) / 2;
-  
-    // 👁️ VERY SIMPLE BLINK RULE
-    if (avgEyeHeight < 1) {
-      setEyeBlinkDetected(true); // ✅ BLINK!
-    }
-  };
   
   
 
@@ -788,43 +740,31 @@ const handleDeleteCandidate = async (realIndex) => {
   
   const startFaceCamera = async () => {
     try {
-      if (!modelsLoaded) {
-        console.log("⏳ Models not loaded yet");
-        return;
-      }
-  
       const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-  
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
-  
-      // Clear existing interval if running
-      if (faceDetectionInterval.current) {
-        clearInterval(faceDetectionInterval.current);
-      }
+      videoRef.current.srcObject = stream;
   
       faceDetectionInterval.current = setInterval(async () => {
         if (!videoRef.current) return;
   
         const detection = await faceapi.detectSingleFace(
           videoRef.current,
-          new faceapi.TinyFaceDetectorOptions()
+          new faceapi.TinyFaceDetectorOptions({
+            inputSize: 416,
+            scoreThreshold: 0.5,
+          })
         );
   
         if (detection && detection.score >= 0.95) {
-          console.log("✅ Face detected");
-  
           clearInterval(faceDetectionInterval.current);
-          faceDetectionInterval.current = null;
-  
           stopCamera();
   
+          // ✅ Mark current step complete
           setStepsDone(prev => ({
             ...prev,
             [`step${currentStep}`]: true
           }));
   
+          // ✅ Move to next step
           if (currentStep < 3) {
             setCurrentStep(prev => prev + 1);
           } else {
@@ -832,7 +772,6 @@ const handleDeleteCandidate = async (realIndex) => {
             setShowFaceVerifiedPopup(true);
           }
         }
-  
       }, 400);
   
     } catch (err) {
@@ -936,12 +875,21 @@ const handleDeleteCandidate = async (realIndex) => {
 
 useEffect(() => {
   const loadModels = async () => {
-    await Promise.all([
-      faceapi.nets.tinyFaceDetector.loadFromUri('/models'),
-      faceapi.nets.faceLandmark68Net.loadFromUri('/models'),
-      faceapi.nets.faceRecognitionNet.loadFromUri('/models'),
-    ]);
-    console.log("Models loaded");
+    try {
+      const MODEL_URL =
+        "https://etecsvfrymoylupvwomq.supabase.co/storage/v1/object/public/face-models";
+
+      await Promise.all([
+        faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+        faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+        faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
+      ]);
+
+      console.log("✅ Face-API Models Loaded Successfully");
+      setModelsLoaded(true);
+    } catch (error) {
+      console.error("❌ Error loading models:", error);
+    }
   };
 
   loadModels();
