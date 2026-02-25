@@ -50,7 +50,9 @@ function App() {
   const [lastStraightVote, setLastStraightVote] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [dots, setDots] = useState("");
+  const [checkingID, setCheckingID] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
   
 
   const [stepsDone, setStepsDone] = useState({
@@ -68,7 +70,8 @@ const [code, setCode] = useState('');
 const [codeEntered, setCodeEntered] = useState(""); // the input field
 const [codeUsed, setCodeUsed] = useState("");       // the code verified & ready to use
 
-const API_BASE_URL = "http://192.168.100.92:5000";
+const API_BASE_URL = "https://mcii-backend.onrender.com";
+
 
 const [verifiedCode, setVerifiedCode] = useState(null);
 const [usedCodes, setUsedCodes] = useState(new Set());
@@ -80,27 +83,6 @@ const [loadingResults, setLoadingResults] = useState(true);
   
   
 
-  
-  
-
-
-
-  
-
-  
-  
-
-  
-  
-  
-
-  
-
-  
-
-  
-  
-  
   
 
 
@@ -139,7 +121,27 @@ const [loadingResults, setLoadingResults] = useState(true);
   
 
   
-  
+  const checkIDOnServer = async (id) => {
+    if (!id) return;
+
+    setCheckingID(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/check-id`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ studentID: id }),
+      });
+      const data = await res.json();
+
+      setIsIDAlreadySignedIn(data.alreadyVoted);
+    } catch (err) {
+      console.error("Error checking ID:", err);
+      setIsIDAlreadySignedIn(false);
+    } finally {
+      setCheckingID(false);
+    }
+  };
+
   
     // get unique partylist from existing candidates
   const availablePartylists = [...new Set(candidates.map(c => c.partylist))];
@@ -289,7 +291,7 @@ const handleDeleteCandidate = async (realIndex) => {
   if (!window.confirm('Are you sure you want to delete this candidate?')) return;
 
   try {
-    const res = await fetch(`http://localhost:5000/candidates/${realIndex}`, {
+    const res = await fetch(`https://mcii-voting-system.onrender.com/candidates/${realIndex}`, {
       method: 'DELETE'
     });
 
@@ -321,34 +323,7 @@ const handleDeleteCandidate = async (realIndex) => {
   };
   
 
-  const detectEyeBlink = async () => {
-    if (!modelsLoaded) return;
-    if (!videoRef.current) return;
-    if (eyeBlinkDetected) return;
   
-    const detection = await faceapi
-      .detectSingleFace(
-        videoRef.current,
-        new faceapi.TinyFaceDetectorOptions({ inputSize: 224 })
-      )
-      .withFaceLandmarks(true); // 👈 IMPORTANT
-  
-    if (!detection) return;
-  
-    const leftEye = detection.landmarks.getLeftEye();
-    const rightEye = detection.landmarks.getRightEye();
-  
-    // get eye height (top-bottom)
-    const leftEyeHeight = Math.abs(leftEye[1].y - leftEye[5].y);
-    const rightEyeHeight = Math.abs(rightEye[1].y - rightEye[5].y);
-  
-    const avgEyeHeight = (leftEyeHeight + rightEyeHeight) / 2;
-  
-    // 👁️ VERY SIMPLE BLINK RULE
-    if (avgEyeHeight < 1) {
-      setEyeBlinkDetected(true); // ✅ BLINK!
-    }
-  };
   
   
 
@@ -368,7 +343,7 @@ const handleDeleteCandidate = async (realIndex) => {
     };
   
     try {
-      const res = await fetch('http://localhost:5000//add-candidate', {
+      const res = await fetch('https://mcii-voting-system.onrender.com/add-candidate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newCandidate)
@@ -438,14 +413,13 @@ const handleDeleteCandidate = async (realIndex) => {
   
   const [expandedVoters, setExpandedVoters] = useState({});
   const handleDeleteVoter = async (studentID) => {
-
     const confirmDelete = window.confirm(
       "⚠️ Are you sure you want to delete this voter's record?"
     );
     if (!confirmDelete) return;
   
     try {
-  
+      // Send DELETE request to server
       const res = await fetch(`${API_BASE_URL}/vote-record/${studentID}`, {
         method: 'DELETE',
       });
@@ -453,28 +427,27 @@ const handleDeleteCandidate = async (realIndex) => {
       const data = await res.json();
       if (!res.ok) throw new Error(data.message);
   
-      // ✅ Remove from UI instantly (NO INDEX NEEDED)
+      // Remove deleted voter from UI
       const newVoteRecords = recordedVotes.voteRecords.filter(
         r => r.studentID !== studentID
       );
-  
-      // ✅ Reload results from server (MOST RELIABLE)
-      fetchResults();   // ⭐ VERY IMPORTANT
   
       setRecordedVotes(prev => ({
         ...prev,
         voteRecords: newVoteRecords
       }));
   
+      // Optional: reload results from server to be sure
+      fetchResults();
+  
       alert("✅ Voter deleted successfully!");
   
     } catch (err) {
-  
       console.error("Delete voter error:", err);
       alert("❌ Failed to delete voter.");
-  
     }
   };
+  
   
   
   
@@ -542,6 +515,7 @@ const handleDeleteCandidate = async (realIndex) => {
     };
   };
   
+
   const handleSubmitTemp = async () => {
     if (!selectedPosition || !candidateName || !courseYear) {
       alert("⚠️ Fill Position, Candidate Name, and Course/Year");
@@ -563,7 +537,7 @@ const handleDeleteCandidate = async (realIndex) => {
     };
   
     try {
-      const res = await fetch('http://localhost:5000/candidates', {
+      const res = await fetch('https://mcii-voting-system.onrender.com/candidates', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newCandidate)
@@ -597,7 +571,7 @@ const handleDeleteCandidate = async (realIndex) => {
     const formData = new FormData();
     formData.append('photo', file);
   
-    const res = await fetch('http://localhost:5000/upload-photo', {
+    const res = await fetch('https://mcii-voting-system.onrender.com/upload-photo', {
       method: 'POST',
       body: formData,
     });
@@ -608,7 +582,7 @@ const handleDeleteCandidate = async (realIndex) => {
 
   const feetchCandidates = async () => {
     try {
-      const res = await fetch('http://localhost:5000//candidates');
+      const res = await fetch('https://mcii-voting-system.onrender.com/candidates');
       const data = await res.json();
       setCandidates(data); // updates the state with Redis data
     } catch (err) {
@@ -628,7 +602,7 @@ const handleDeleteCandidate = async (realIndex) => {
   
   const fetchCandidates = async () => {
     try {
-      const res = await fetch('http://localhost:5000/candidates');
+      const res = await fetch('https://mcii-voting-system.onrender.com/candidates');
       const data = await res.json();
       setCandidates(data); // from Redis only
     } catch (err) {
@@ -735,7 +709,7 @@ const handleDeleteCandidate = async (realIndex) => {
 
 
   useEffect(() => {
-  fetch('http://localhost:5000//candidates')
+    fetch('https://mcii-backend.onrender.com/candidates')
     .then(res => res.json())
     .then(data => setCandidates(data))
     .catch(err => console.error(err));
@@ -771,27 +745,28 @@ const handleDeleteCandidate = async (realIndex) => {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true });
       videoRef.current.srcObject = stream;
   
-      await faceapi.nets.tinyFaceDetector.loadFromUri('/models');
-  
       faceDetectionInterval.current = setInterval(async () => {
         if (!videoRef.current) return;
   
         const detection = await faceapi.detectSingleFace(
           videoRef.current,
-          new faceapi.TinyFaceDetectorOptions()
+          new faceapi.TinyFaceDetectorOptions({
+            inputSize: 416,
+            scoreThreshold: 0.5,
+          })
         );
   
         if (detection && detection.score >= 0.95) {
           clearInterval(faceDetectionInterval.current);
           stopCamera();
   
-          // ✅ AUTO COMPLETE CURRENT STEP
+          // ✅ Mark current step complete
           setStepsDone(prev => ({
             ...prev,
             [`step${currentStep}`]: true
           }));
   
-          // ✅ MOVE TO NEXT STEP
+          // ✅ Move to next step
           if (currentStep < 3) {
             setCurrentStep(prev => prev + 1);
           } else {
@@ -800,10 +775,13 @@ const handleDeleteCandidate = async (realIndex) => {
           }
         }
       }, 400);
+  
     } catch (err) {
-      console.error("Camera error:", err);
+      console.error("❌ Camera error:", err);
     }
   };
+  
+  
   
   useEffect(() => {
     fetchCandidates();
@@ -849,34 +827,37 @@ const handleDeleteCandidate = async (realIndex) => {
 
     const detect = async () => {
       if (!isRunning || !idFaceDescriptor) return;
-
+    
       const now = Date.now();
       if (now - lastDetection < 300) {
         animationId = requestAnimationFrame(detect);
         return;
       }
-
-      const result = await faceapi
-        .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 160 }))
-        .withFaceLandmarks()
-        .withFaceDescriptor();
-
-      if (result) {
-        const distance = faceapi.euclideanDistance(result.descriptor, idFaceDescriptor);
-        console.log("Distance:", distance);
-
-        if (distance < 0.45) {
-          setIsFaceConfirmed(true);
-          isRunning = false;
-          video.srcObject.getTracks().forEach((t) => t.stop());
+    
+      try {
+        const result = await faceapi
+          .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 160 }))
+          .withFaceLandmarks()
+          .withFaceDescriptor();
+    
+        if (result) {
+          const distance = faceapi.euclideanDistance(result.descriptor, idFaceDescriptor);
+          console.log("Distance:", distance);
+    
+          if (distance < 0.45) {
+            setIsFaceConfirmed(true);
+            isRunning = false;
+            video.srcObject.getTracks().forEach((t) => t.stop());
+          }
         }
+      } catch (err) {
+        console.error("Face detection error:", err);
       }
-
+    
       lastDetection = now;
-      if (isRunning) {
-        animationId = requestAnimationFrame(detect);
-      }
+      if (isRunning) animationId = requestAnimationFrame(detect);
     };
+    
 
     detect();
   };
@@ -896,16 +877,26 @@ const handleDeleteCandidate = async (realIndex) => {
 
 useEffect(() => {
   const loadModels = async () => {
-    const MODEL_URL = '/models'; // adjust path if needed
-    
-    await faceapi.loadTinyFaceDetectorModel(MODEL_URL);
-    await faceapi.loadFaceLandmarkTinyModel(MODEL_URL);
-    await faceapi.loadFaceRecognitionModel(MODEL_URL);
+    try {
+      const MODEL_URL =
+        "https://etecsvfrymoylupvwomq.supabase.co/storage/v1/object/public/face-models";
 
-    setModelsLoaded(true); // ✅ IMPORTANT
+      await Promise.all([
+        faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+        faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+        faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
+      ]);
+
+      console.log("✅ Face-API Models Loaded Successfully");
+      setModelsLoaded(true);
+    } catch (error) {
+      console.error("❌ Error loading models:", error);
+    }
   };
+
   loadModels();
 }, []);
+
 
 useEffect(() => {
   if (view === 'takeIdPictureView') {
@@ -1145,7 +1136,7 @@ useEffect(() => {
   };
 
   try {
-    const res = await fetch('http://localhost:5000/candidates', {
+    const res = await fetch('https://mcii-voting-system.onrender.com/candidates', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -1194,21 +1185,15 @@ useEffect(() => {
 };
 
 const handleSubmitVotes = async () => {
-  // Prevent incomplete ballot
   if (Object.keys(selectedVotes).length !== positions.length) return;
+  if (isSubmitting) return; // 🔥 Prevent double click
 
-  // 🔥 Prevent double submission
-  if (isSubmitting) return;
+  if (!codeUsed)
+    return alert("❌ No code verified! Please enter your voting code.");
 
-  if (!codeUsed) {
-    alert("❌ No code verified! Please enter your voting code.");
-    return;
-  }
-
-  setIsSubmitting(true); // 🔥 Start loading
+  setIsSubmitting(true); // 🔥 START LOADING
 
   try {
-    // ✅ Build readable votes FIRST
     const votesPayload = Object.fromEntries(
       Object.entries(selectedVotes).map(([pos, idx]) => {
         const candidate = candidates.filter(c => c.position === pos)[idx];
@@ -1223,18 +1208,17 @@ const handleSubmitVotes = async () => {
         studentID,
         name: studentName,
         code: codeUsed,
-        votes: votesPayload
+        votes: votesPayload,
       }),
     });
 
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || "Voting failed");
 
-    // ⭐ CREATE RECEIPT DATA
     const builtReceipt = Object.entries(votesPayload).map(
       ([position, candidate]) => ({
         position,
-        candidate
+        candidate,
       })
     );
 
@@ -1244,13 +1228,12 @@ const handleSubmitVotes = async () => {
 
     setCodeUsed("");
 
-    setView("voteReceipt"); // switch view after success
-
+    setView("voteReceipt"); // 🔥 STOP loading ONLY after view changes
   } catch (err) {
     console.error(err);
     alert(`❌ Error submitting votes: ${err.message}`);
   } finally {
-    setIsSubmitting(false); // 🔥 Always reset loading
+    setIsSubmitting(false); // 🔥 STOP loading when finished
   }
 };
 
@@ -2060,42 +2043,47 @@ const handleLogout = () => {
   
   <div>
   <input
-    className="input-field"
-    placeholder="Student ID Number"
-    value={studentID}
-    onChange={(e) => {
-      const value = e.target.value;
+        className="input-field"
+        placeholder="Student ID Number"
+        value={studentID}
+        onChange={(e) => {
+          const value = e.target.value;
 
-      // Allow only up to 6 digits
-      if (/^\d{0,6}$/.test(value)) {
-        setStudentID(value);
-
-        // Check if ID is already signed in / already voted
-        if (hasVotedById[value]) {
-          setIsIDAlreadySignedIn(true);
-        } else {
-          setIsIDAlreadySignedIn(false);
-        }
-      }
-    }}
-    style={{
-      border: isIDAlreadySignedIn ? "2px solid red" : "2px solid #ccc",
-      outline: "none"
-    }}
-  />
+          // Allow only up to 6 digits
+          if (/^\d{0,6}$/.test(value)) {
+            setStudentID(value);
+            // Call server to check if this ID already voted
+            if (value.length === 6) checkIDOnServer(value);
+            else setIsIDAlreadySignedIn(false); // reset if incomplete
+          }
+        }}
+        style={{
+          border: isIDAlreadySignedIn ? "2px solid red" : "2px solid #ccc",
+          outline: "none",
+        }}
+        disabled={checkingID}
+      />
 
   {/* 🔴 Warning Text */}
   {isIDAlreadySignedIn && (
-    <p style={{ color: "red", marginTop: "5px", fontWeight: "bold" }}>
-      ⚠️ This ID number is already signed in.
-    </p>
-  )}
+        <p style={{ color: "red", marginTop: "5px", fontWeight: "bold" }}>
+          ⚠️ This ID number has already voted.
+        </p>
+      )}
+
+      {checkingID && (
+        <p style={{ color: "gray", marginTop: "5px", fontStyle: "italic" }}>
+          Checking ID...
+        </p>
+      )}
+
+      <small style={{ color: "darkgray", display: "block", marginTop: "4px" }}>
+        Note: Make sure your ID no.is correct
+      </small>
 </div>
 
 
-  <small style={{ color: 'darkgray', display: 'block', marginTop: '4px' }}>
-    NOte: Make sure your ID no. is correct
-  </small>
+
 
 
 
@@ -2182,8 +2170,26 @@ const handleLogout = () => {
       alert("⚠️ Finish filling up your information first.");
       return;
     }
-    setView('takeIdPictureView');
+  
+    const hasID = window.confirm("Do you have MCII School ID?\n\nPress OK if YES.\nPress Cancel if NO.");
+  
+    if (hasID) {
+      setView('takeIdPictureView');
+    } else {
+      const adminCode = prompt("Enter Admin Code:");
+  
+      if (adminCode === "qwert54321") {
+        alert("✅ Admin Code Accepted!");
+  
+        setIsIDConfirmed(true);
+        setIsFaceConfirmed(true);
+  
+      } else if (adminCode !== null) {
+        alert("❌ Invalid Admin Code!");
+      }
+    }
   }}
+  
   disabled={isIDConfirmed || isIDAlreadySignedIn} // disabled if ID confirmed or already signed in
   style={{
     backgroundColor: isIDConfirmed ? 'green' : '',
@@ -2461,7 +2467,18 @@ const handleLogout = () => {
     {/* Buttons Row */}
     <div style={{ display: 'flex', justifyContent: 'center', gap: '15px' }}>
     {/* Manual Submit Button */}
-    <button onClick={handleSubmitTemp}
+    <button
+  onClick={() => {
+    const password = prompt("Enter Password:");
+
+    if (password === null) return; // user pressed cancel
+
+    if (password === "access54321") {
+      handleSubmitTemp(); // ✅ allow access
+    } else {
+      alert("❌ Incorrect Password!");
+    }
+  }}
   style={{
     padding: '8px 20px',
     backgroundColor: '#007bff',
@@ -2473,6 +2490,7 @@ const handleLogout = () => {
 >
   {editingIndex !== null ? 'Update Candidate' : 'Submit'}
 </button>
+
 
 
 
@@ -2628,34 +2646,58 @@ const handleLogout = () => {
 
                 {/* Buttons */}
                 <button
-                  onClick={() => handleEditCandidate(candidate.realIndex)}
+  onClick={() => {
+    const password = prompt("Enter Password:");
 
-                  style={{
-                    backgroundColor: '#ffc107',
-                    color: '#000',
-                    border: 'none',
-                    borderRadius: '5px',
-                    padding: '5px 10px',
-                    cursor: 'pointer',
-                    marginRight: '5px'
-                  }}
-                >
-                  ✏️ Edit
-                </button>
+    if (password === null) return; // Cancel pressed
 
-                <button
-                  onClick={() => handleDeleteCandidate(candidate.realIndex)}
-                  style={{
-                    backgroundColor: '#dc3545',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '5px',
-                    padding: '5px 10px',
-                    cursor: 'pointer'
-                  }}
-                >
-                  🗑️ Delete
-                </button>
+    if (password === "access54321") {
+      handleEditCandidate(candidate.realIndex);
+    } else {
+      alert("❌ Incorrect Password!");
+    }
+  }}
+  style={{
+    backgroundColor: '#ffc107',
+    color: '#000',
+    border: 'none',
+    borderRadius: '5px',
+    padding: '5px 10px',
+    cursor: 'pointer',
+    marginRight: '5px'
+  }}
+>
+  ✏️ Edit
+</button>
+
+
+<button
+  onClick={() => {
+    const password = prompt("Enter Password:");
+
+    if (password === null) return; // Cancel pressed
+
+    if (password === "access54321") {
+      const confirmDelete = window.confirm("Are you sure you want to delete this candidate?");
+      if (confirmDelete) {
+        handleDeleteCandidate(candidate.realIndex);
+      }
+    } else {
+      alert("❌ Incorrect Password!");
+    }
+  }}
+  style={{
+    backgroundColor: '#dc3545',
+    color: 'white',
+    border: 'none',
+    borderRadius: '5px',
+    padding: '5px 10px',
+    cursor: 'pointer'
+  }}
+>
+  🗑️ Delete
+</button>
+
 
               </div>
             </div>
@@ -2816,7 +2858,23 @@ const handleLogout = () => {
         <button className="mini-button" onClick={() => toggleVoterExpand(i)}>
           {expandedVoters[i] ? '➖' : '➕'}
         </button>
-        <button className="delete-button" onClick={() => handleDeleteVoter(record.studentID)}>🗑️</button>
+        <button
+  className="delete-button"
+  onClick={() => {
+    const password = prompt("Enter Password:");
+    if (password === null) return;
+
+    if (password === "access54321") {
+      handleDeleteVoter(record.studentID); // ✅ delete selected voter
+    } else {
+      alert("❌ Incorrect Password!");
+    }
+  }}
+>
+  🗑️
+</button>
+
+
       </p>
       {expandedVoters[i] && (
         <ul style={{ color: 'black' }} className="voter-vote-list">
@@ -2837,11 +2895,22 @@ const handleLogout = () => {
           <button className="glow-button voter" onClick={handleDownloadPDF}>⬇️ Download PDF</button>
           <button
   className="glow-button admin"
-  style={{ backgroundColor: '#e53935' }} // red to indicate danger
+  style={{ backgroundColor: '#e53935' }}
   onClick={async () => {
+
+    const password = prompt("Enter Admin Password:");
+
+    if (password === null) return; // Cancel pressed
+
+    if (password !== "access54321") {
+      alert("❌ Incorrect Password!");
+      return;
+    }
+
     const confirmReset = window.confirm(
       "⚠️ Are you sure you want to delete all votes? This cannot be undone!"
     );
+
     if (!confirmReset) return;
 
     try {
@@ -2854,7 +2923,6 @@ const handleLogout = () => {
 
       if (!res.ok) throw new Error(data.message || "Failed to reset votes");
 
-      // ✅ Reset all codes after votes are cleared
       const codeRes = await fetch(`${API_BASE_URL}/reset-codes`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -2865,6 +2933,7 @@ const handleLogout = () => {
       if (!codeRes.ok) throw new Error(codeData.message || "Failed to reset codes");
 
       alert("✅ All votes and codes have been reset successfully!");
+
     } catch (err) {
       console.error("Reset votes error:", err);
       alert("❌ Failed to reset votes and codes. Check console for details.");
@@ -2873,6 +2942,7 @@ const handleLogout = () => {
 >
   🗑️ Reset All Votes & Codes
 </button>
+
 
         </div>
       </>
@@ -2900,20 +2970,8 @@ const handleLogout = () => {
   onClick={async () => {
     if (!codeEntered) return alert('❌ Please enter a code');
 
-    // 🔐 TEMP ADMIN BYPASS
-    if (codeEntered === 'admin321') {
-      setIsLoading(true);
-      setTimeout(() => {
-        setIsLoading(false);
-        setView('adminMenu');
-        setCodeEntered('');
-        setCodeUsed('');
-      }, 1000);
-      return;
-    }
-
     try {
-      const res = await fetch(`${API_BASE_URL}/check-code`, {
+      const res = await fetch(`${API_BASE_URL}/check-access`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code: codeEntered }),
@@ -2924,28 +2982,34 @@ const handleLogout = () => {
       if (!res.ok) {
         alert(`❌ ${data.message}`);
         setCodeEntered('');
-        setCodeUsed('');
         return;
       }
 
       setIsLoading(true);
-
       setTimeout(() => {
         setIsLoading(false);
-        setView('verificationStep');
-        setCodeUsed(codeEntered); // ✅ save the verified code
-        setCodeEntered('');       // clear input field
+
+        if (data.type === 'admin') {
+          setView('adminMenu');
+        } else if (data.type === 'voter') {
+          setView('verificationStep');
+          setCodeUsed(codeEntered);
+        }
+
+        setCodeEntered('');
       }, 1000);
+
     } catch (err) {
       console.error(err);
       alert('❌ Server error. Please try again.');
       setCodeEntered('');
-      setCodeUsed('');
     }
   }}
 >
   Enter
 </button>
+
+
 
 
 
@@ -3016,7 +3080,7 @@ const handleLogout = () => {
                           )}
 
                           {/* Candidate Photo */}
-                          <img
+                          <img 
                             src={
                               c.photo
                                 ? c.photo // use Supabase public URL
@@ -3063,8 +3127,7 @@ const handleLogout = () => {
   className={`glow-button voter ${isSubmitting ? 'loading' : ''}`}
   onClick={handleSubmitVotes}
   disabled={
-    Object.keys(selectedVotes).length !== positions.length ||
-    isSubmitting
+    Object.keys(selectedVotes).length !== positions.length || isSubmitting
   }
 >
   {isSubmitting ? "Submitting..." : "Submit"}
@@ -3072,7 +3135,7 @@ const handleLogout = () => {
         </div>
       </>
     )}
-  </div> 
+  </div>
 )}
 
     </div>
