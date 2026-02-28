@@ -1035,13 +1035,11 @@ useEffect(() => {
         .replace(/[.,]/g, '')
         .trim();
   
-      const isValid =
-        text.includes("MEDINA") &&
-        text.includes("COLLEGE") &&
-        text.includes("IPIL") &&
-        text.includes("INC");
+      // ✅ New condition: true if ANY one of these words is present
+      const keywords = ["MEDINA", "COLLEGE", "IPIL", "INC", "BS"];
+      const isValid = keywords.some(word => text.includes(word));
   
-      return isValid; // ✅ TRUE or FALSE ONLY
+      return isValid; // TRUE if any keyword is present
     } catch (err) {
       console.error("OCR Error:", err);
       return false;
