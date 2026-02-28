@@ -2166,31 +2166,40 @@ const handleLogout = () => {
 <button
   className="main-button"
   onClick={() => {
+    // Check if fields are empty
     if (!firstName || !middleInitial || !lastName || !studentID || !course || !yearLevel) {
       alert("⚠️ Finish filling up your information first.");
       return;
     }
-  
-    const hasID = window.confirm("Do you have MCII School ID?\n\nPress OK if YES.\nPress Cancel if NO.");
-  
+
+    // ✅ NEW: Require exactly 6 digits
+    if (studentID.length !== 6) {
+      alert("⚠️ Student ID must be exactly 6 digits.");
+      return;
+    }
+
+    const hasID = window.confirm(
+      "Do you have MCII School ID?\n\nPress OK if YES.\nPress Cancel if NO."
+    );
+
     if (hasID) {
       setView('takeIdPictureView');
     } else {
       const adminCode = prompt("Enter Admin Code:");
-  
+
       if (adminCode === "qwert54321") {
         alert("✅ Admin Code Accepted!");
-  
+
         setIsIDConfirmed(true);
         setIsFaceConfirmed(true);
-  
+
       } else if (adminCode !== null) {
         alert("❌ Invalid Admin Code!");
       }
     }
   }}
-  
-  disabled={isIDConfirmed || isIDAlreadySignedIn} // disabled if ID confirmed or already signed in
+
+  disabled={isIDConfirmed || isIDAlreadySignedIn}
   style={{
     backgroundColor: isIDConfirmed ? 'green' : '',
     cursor: isIDConfirmed || isIDAlreadySignedIn ? 'not-allowed' : 'pointer'
