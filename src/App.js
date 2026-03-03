@@ -1036,7 +1036,7 @@ useEffect(() => {
         .trim();
   
       // ✅ New condition: true if ANY one of these words is present
-      const keywords = ["MEDINA", "COLLEGE", "IPIL", "INC", "BS"];
+      const keywords = ["BS"];
       const isValid = keywords.some(word => text.includes(word));
   
       return isValid; // TRUE if any keyword is present
